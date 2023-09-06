@@ -4,15 +4,33 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"time"
 )
 
+type Info struct {
+	Value    string `json:"value,omitempty"`
+	ExpireAt int64  `json:"expire_at,omitempty"`
+}
+
 func SET(matchString []string) {
+
 	intoMap, err := LoadJsonTransformIntoMap()
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	intoMap[matchString[1]] = matchString[2]
+	var expireAt int
+	if len(matchString) == 4 {
+		expireAt, err = strconv.Atoi(matchString[3])
+		if err != nil {
+			log.Println(err)
+			return
+		}
+	}
+	expireAt = 999999
+	info := Info{Value: matchString[2], ExpireAt: time.Now().Add(time.Minute * time.Duration(expireAt)).UnixNano()}
+
+	intoMap[matchString[1]] = info
 	if err = Write(intoMap); err != nil {
 		log.Println(err)
 		return
@@ -30,7 +48,17 @@ func SETNX(matchString []string) {
 		fmt.Println(0)
 		return
 	}
-	intoMap[matchString[1]] = matchString[2]
+	var expireAt int
+	if len(matchString) == 4 {
+		expireAt, err = strconv.Atoi(matchString[3])
+		if err != nil {
+			log.Println(err)
+			return
+		}
+	}
+	expireAt = 999999
+	info := &Info{Value: matchString[2], ExpireAt: time.Now().Add(time.Minute * time.Duration(expireAt)).UnixNano()}
+	intoMap[matchString[1]] = info
 	if err = Write(intoMap); err != nil {
 		log.Println(err)
 		return
@@ -58,8 +86,16 @@ func GET(matchString []string) {
 		log.Println(err)
 		return
 	}
-	if val, ok := intoMap[matchString[1]]; ok {
-		fmt.Println(val)
+	if val, ok := intoMap[matchString[1]].(Info); ok {
+		if val.ExpireAt > time.Now().UnixNano() {
+			delete(intoMap, matchString[1])
+			err := Write(intoMap)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+		}
+		fmt.Println(val.Value)
 		return
 	}
 	return
