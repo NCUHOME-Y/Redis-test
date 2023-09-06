@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 )
 
 var reader *bufio.Reader
@@ -32,6 +33,7 @@ func readSelect() string {
 }
 func Start() {
 	for {
+		exec.Command("powershell", "Clear-Host").Run()
 		fmt.Println("1. 命令行")
 		fmt.Println("2. 使用说明")
 		fmt.Println("3. 退出程序")
