@@ -28,7 +28,7 @@ func SET(matchString []string) {
 		}
 	}
 	expireAt = 999999
-	info := Info{Value: matchString[2], ExpireAt: time.Now().Add(time.Minute * time.Duration(expireAt)).UnixNano()}
+	info := Info{Value: matchString[2], ExpireAt: time.Now().Add(time.Minute * time.Duration(expireAt)).Unix()}
 
 	intoMap[matchString[1]] = info
 	if err = Write(intoMap); err != nil {
@@ -56,8 +56,8 @@ func SETNX(matchString []string) {
 			return
 		}
 	}
-	expireAt = 999999
-	info := &Info{Value: matchString[2], ExpireAt: time.Now().Add(time.Minute * time.Duration(expireAt)).UnixNano()}
+	expireAt = 9999
+	info := &Info{Value: matchString[2], ExpireAt: time.Now().Add(time.Minute * time.Duration(expireAt)).Unix()}
 	intoMap[matchString[1]] = info
 	if err = Write(intoMap); err != nil {
 		log.Println(err)
@@ -86,17 +86,16 @@ func GET(matchString []string) {
 		log.Println(err)
 		return
 	}
-	if val, ok := intoMap[matchString[1]].(Info); ok {
-		if val.ExpireAt > time.Now().UnixNano() {
+	if val, ok := intoMap[matchString[1]]; ok {
+		m := val.(map[string]interface{})
+		if int64(m["expire_at"].(float64)) > time.Now().Unix() {
 			delete(intoMap, matchString[1])
-			err := Write(intoMap)
+			err = Write(intoMap)
 			if err != nil {
 				log.Println(err)
-				return
 			}
 		}
-		fmt.Println(val.Value)
-		return
+		fmt.Println(m["value"])
 	}
 	return
 }
