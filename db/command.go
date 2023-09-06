@@ -6,8 +6,6 @@ import (
 	"strconv"
 )
 
-var CMDHandler func([]string)
-
 func SET(matchString []string) {
 	intoMap, err := LoadJsonTransformIntoMap()
 	if err != nil {
